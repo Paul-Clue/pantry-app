@@ -22,8 +22,6 @@ export default async function handler(
       docs.forEach((doc) => {
         inventoryList.push({ name: doc.id, data: doc.data() });
       });
-      // setInventory(inventoryList);
-      // console.log(inventoryList)
 
       res.status(200).json({ inventoryList });
     } catch (error) {
@@ -32,8 +30,8 @@ export default async function handler(
       res.status(500).json({ error: error });
     }
   } else if (req.method === 'POST') {
-    const { reqItem } = req.body;
-    const item = reqItem.charAt(0).toUpperCase()
+    const { item } = req.body;
+
     try {
       const docRef = doc(collection(firestore, 'inventory'), item);
       const docSnap = await getDoc(docRef);
@@ -44,11 +42,6 @@ export default async function handler(
         await setDoc(docRef, { quantity: 1 });
       }
 
-      // await updateInventory();
-      //   setInventory(inventoryList);
-      //   console.log(inventoryList)
-
-      // res.status(200).json({ inventoryList });
       res.status(200).json({});
     } catch (error) {
       console.error('Error processing request:', error);

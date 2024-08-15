@@ -45,7 +45,9 @@ export default function Pantry() {
     },
   });
 
-  const [inventory, setInventory] = useState<{ name: string; data: any }[]>([]);
+  const [inventory, setInventory] = useState<
+    { name: string; quantity: number }[]
+  >([]);
   const [open, setOpen] = useState<boolean>(false);
   const [itemName, setItemName] = useState<string>('');
 
@@ -69,12 +71,15 @@ export default function Pantry() {
       console.log('beans', data.inventoryList[0]);
       console.log('numberOfBeans', data.inventoryList[0].data.quantity);
       // await updateInventory();
-      const inventoryList: { name: string; data: any }[] = [];
-      //   docs.forEach((doc) => {
-      //     inventoryList.push({ name: doc.id, data: doc.data() });
-      //   });
-      // setInventory(inventoryList);
-      //   console.log(inventoryList)
+      const inventoryListing: { name: string; quantity: any }[] = [];
+      data.inventoryList.forEach((item: { name: string; data: any }) => {
+        inventoryListing.push({
+          name: item.name,
+          quantity: item.data.quantity,
+        });
+      });
+      setInventory(inventoryListing);
+      console.log('inventoryListing', inventoryListing);
       // setImageDescription(data.description);
     } catch (error) {
       console.error('Error getting items description:', error);
@@ -99,13 +104,14 @@ export default function Pantry() {
       const data = await response.json();
       // console.log('data', data)
       // setImageDescription(data.description);
+      await updateInventory();
     } catch (error) {
       console.error('Error getting items description:', error);
       // setImageDescription('Failed to get items');
     }
   };
-  addItem('beans');
-  addItem('corn');
+  // addItem('beans');
+  // addItem('corn');
 
   const removeItem = async (item: string) => {
     try {
@@ -122,6 +128,7 @@ export default function Pantry() {
       }
 
       if (response.status === 200) {
+        await updateInventory();
         console.log('Item removed');
       }
     } catch (error) {
@@ -162,11 +169,97 @@ export default function Pantry() {
 
   return (
     <>
-      <Box>
+      <Box
+        width='100vw'
+        height='100vh'
+        display={'flex'}
+        justifyContent={'center'}
+        flexDirection={'column'}
+        alignItems={'center'}
+        gap={2}
+      >
+        <Modal
+          open={open}
+          onClose={handleClose}
+          aria-labelledby='modal-modal-title'
+          aria-describedby='modal-modal-description'
+        >
+          <Box sx={style}>
+            <Typography id='modal-modal-title' variant='h6' component='h2'>
+              Add Item
+            </Typography>
+            <Stack width='100%' direction={'row'} spacing={2}>
+              <TextField
+                id='outlined-basic'
+                label='Item'
+                variant='outlined'
+                fullWidth
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+              />
+              <Button
+                variant='outlined'
+                onClick={() => {
+                  addItem(itemName);
+                  setItemName('');
+                  handleClose();
+                }}
+              >
+                Add
+              </Button>
+            </Stack>
+          </Box>
+        </Modal>
+        <Button variant='contained' onClick={handleOpen}>
+          Add New Item
+        </Button>
+        <Box border={'1px solid #333'}>
+          <Box
+            width='800px'
+            height='100px'
+            bgcolor={'#ADD8E6'}
+            display={'flex'}
+            justifyContent={'center'}
+            alignItems={'center'}
+          >
+            <Typography variant={'h2'} color={'#333'} textAlign={'center'}>
+              Inventory Items
+            </Typography>
+          </Box>
+          <Stack width='800px' height='300px' spacing={2} overflow={'auto'}>
+            {inventory.map(({ name, quantity }) => (
+              <Box
+                key={name}
+                width='100%'
+                minHeight='150px'
+                display={'flex'}
+                justifyContent={'space-between'}
+                alignItems={'center'}
+                bgcolor={'#f0f0f0'}
+                paddingX={5}
+              >
+                <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
+                  {name.charAt(0).toUpperCase() + name.slice(1)}
+                </Typography>
+                <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
+                  Quantity: {quantity}
+                </Typography>
+                <Button variant='contained' onClick={() => addItem(name)}>
+                  Add
+                </Button>
+                <Button variant='contained' onClick={() => removeItem(name)}>
+                  Remove
+                </Button>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
+      </Box>
+      {/* <Box>
         <Typography variant='h1'>Inventory Management</Typography>
       </Box>
       <h1>Pantry</h1>
-      <p>Welcome {session?.data?.user?.email}</p>
+      <p>Welcome {session?.data?.user?.email}</p> */}
       <button onClick={() => signOut()}>Sign out</button>
     </>
   );

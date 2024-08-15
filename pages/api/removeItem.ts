@@ -28,9 +28,6 @@ export default async function handler(
           await setDoc(docRef, { quantity: quantity - 1 });
         }
       }
-      // await updateInventory();
-      // setInventory(inventoryList);
-      // console.log(inventoryList)
 
       res.status(200).json({});
     } catch (error) {
