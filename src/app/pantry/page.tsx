@@ -1,9 +1,13 @@
 'use client';
-import React from 'react';
 // import { signIn, signOut, useSession } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import Container from '@mui/material/Container';
+import Image from 'next/image';
+import CircularProgress from '@mui/material/CircularProgress';
+import { Camera } from 'react-camera-pro';
+import CameraswitchIcon from '@mui/icons-material/Cameraswitch';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Stack,
@@ -18,7 +22,9 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: 400,
+  width: 500,
+  height: 500,
+  overflow: 'auto',
   bgcolor: 'white',
   border: '2px solid #000',
   boxShadow: 24,
@@ -36,11 +42,71 @@ export default function Pantry() {
     },
   });
 
+  const camera = useRef<typeof Camera>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const [isCameraOn, setIsCameraOn] = useState<boolean>(false);
+  const [imageDescription, setImageDescription] = useState<string | null>(null);
+  const [faceMode, setFaceMode] = useState<'user' | 'environment'>(
+    'environment'
+  );
+  const [loading, setLoading] = useState(false);
   const [inventory, setInventory] = useState<
     { name: string; quantity: number }[]
   >([]);
   const [open, setOpen] = useState<boolean>(false);
   const [itemName, setItemName] = useState<string>('');
+
+  const toggleFacingMode = () => {
+    if (camera.current && 'switchCamera' in camera.current) {
+      (camera.current as any).switchCamera();
+      setFaceMode((prevMode: string) =>
+        prevMode === 'user' ? 'environment' : 'user'
+      );
+    }
+  };
+
+  const takePhoto = () => {
+    if (camera.current && 'takePhoto' in camera.current) {
+      const photo = (camera.current as any).takePhoto();
+      // setLoading(true);
+      // Convert the photo to base64
+      fetch(photo)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64Image = reader.result as string;
+            setImage(base64Image);
+            // sendImageToOpenAI(base64Image);
+            await sendImageToOpenAI(base64Image);
+            // setLoading(false);
+          };
+          reader.readAsDataURL(blob);
+        });
+    }
+  };
+
+  const sendImageToOpenAI = async (base64Image: string) => {
+    try {
+      const response = await fetch('/api/openai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: base64Image }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get image description');
+      }
+
+      const data = await response.json();
+      setImageDescription(data.description);
+    } catch (error) {
+      console.error('Error getting image description:', error);
+      setImageDescription('Failed to get image description');
+    }
+  };
 
   const updateInventory = useCallback(async () => {
     try {
@@ -57,10 +123,10 @@ export default function Pantry() {
       }
 
       const data = await response.json();
-      console.log('data', data);
-      console.log('inventoryList', data.inventoryList);
-      console.log('beans', data.inventoryList[0]);
-      console.log('numberOfBeans', data.inventoryList[0].data.quantity);
+      // console.log('data', data);
+      // console.log('inventoryList', data.inventoryList);
+      // console.log('beans', data.inventoryList[0]);
+      // console.log('numberOfBeans', data.inventoryList[0].data.quantity);
       // await updateInventory();
       const inventoryListing: { name: string; quantity: any }[] = [];
       data.inventoryList.forEach((item: { name: string; data: any }) => {
@@ -148,31 +214,185 @@ export default function Pantry() {
           aria-labelledby='modal-modal-title'
           aria-describedby='modal-modal-description'
         >
-          <Box sx={style}>
-            <Typography id='modal-modal-title' variant='h6' component='h2'>
-              Add Item
-            </Typography>
-            <Stack width='100%' direction={'row'} spacing={2}>
-              <TextField
-                id='outlined-basic'
-                label='Item'
-                variant='outlined'
-                fullWidth
-                value={itemName}
-                onChange={(e) => setItemName(e.target.value)}
-              />
-              <Button
-                variant='outlined'
-                onClick={() => {
-                  addItem(itemName);
-                  setItemName('');
-                  handleClose();
+          <>
+            <Box sx={style}>
+              {/* <Container
+                component='main'
+                className='border-2 border-green-500 h-full w-full flex flex-col items-center justify-center p-0'
+              > */}
+              <Box className='border-2 border-green-500 w-full flex flex-col items-center justify-center'>
+                <Box
+                  sx={{
+                    marginBottom: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    border: '1px solid green',
+                    // borderRadius: '15px',
+                    boxShadow: '0px 0px 10px 0px rgba(0,0,0,0.75)',
+                    backgroundColor: 'black',
+                    width: '100%',
+                    height: '80%',
+                  }}
+                >
+                  {isCameraOn ? (
+                    <Box
+                      style={{
+                        display: 'flex',
+                        // width: '300px',
+                        width: '100%',
+                        height: '57%',
+                        flexDirection: 'row',
+                        alignItems: 'start',
+                        // border: '1px solid orange',
+                        // borderRadius: '15px'
+                      }}
+                    >
+                      {/* <Button
+                          variant='contained'
+                          sx={{
+                            color: 'green',
+                            backgroundColor: 'green',
+                            marginBottom: '10px',
+                            marginTop: '10px',
+                          }}
+                          onClick={toggleFacingMode}
+                        >
+                          <CameraswitchIcon sx={{ color: 'whitesmoke' }} />
+                        </Button> */}
+                      {/* <Box sx={{
+                            color: 'green',
+                            backgroundColor: 'green',
+                            marginBottom: '10px',
+                            marginTop: '10px',
+                            width: '25px'
+                          }}></Box> */}
+                      {loading && (
+                        <CircularProgress
+                          size={80}
+                          sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            zIndex: 1000,
+                          }}
+                        />
+                      )}
+                      <Camera
+                        ref={camera}
+                        aspectRatio={16 / 6}
+                        errorMessages={{
+                          noCameraAccessible: 'No camera device accessible',
+                          permissionDenied: 'Permission denied',
+                          switchCamera: 'Could not switch camera',
+                          canvas: 'Canvas error',
+                        }}
+                      />
+                      <Box
+                        style={{
+                          width: '100%',
+                          // height: '100%',
+                          border: '1px solid green',
+                          // marginTop: '2px',
+                          // padding: '20px',
+                          overflow: 'auto',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {image && (
+                          <Box>
+                            <Image
+                              src={image}
+                              width={200}
+                              height={150}
+                              style={{ margin: 'auto' }}
+                              alt='Taken photo'
+                            />
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  ) : (
+                    <>
+                      <Box
+                        className='camera-placeholder'
+                        style={{
+                          color: 'whitesmoke',
+                          width: '150px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        Camera is off
+                      </Box>
+                    </>
+                  )}
+                  {imageDescription && (
+                    <Box>
+                      <Typography variant='body1' sx={{ mt: 2 }}>
+                        Description: {imageDescription}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+                <Box
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center'
                 }}
-              >
-                Add
-              </Button>
-            </Stack>
-          </Box>
+                >
+                  <Button
+                    variant='contained'
+                    onClick={() => setIsCameraOn(!isCameraOn)}
+                    style={{ marginBottom: '10px', width: '200px' }}
+                  >
+                    {isCameraOn ? 'Turn Camera Off' : 'Turn Camera On'}
+                  </Button>
+                  {isCameraOn && (
+                    <Box>
+                      <Button
+                        variant='contained'
+                        style={{ width: '200px' }}
+                        onClick={takePhoto}
+                        disabled={loading}
+                      >
+                        Take photo
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+              {/* </Container> */}
+              {/* <Box sx={style}> */}
+              <Typography id='modal-modal-title' variant='h6' component='h2'>
+                Add Item
+              </Typography>
+              <Stack width='100%' direction={'row'} spacing={2}>
+                <TextField
+                  id='outlined-basic'
+                  label='Item'
+                  variant='outlined'
+                  fullWidth
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                />
+                <Button
+                  variant='outlined'
+                  onClick={() => {
+                    addItem(itemName);
+                    setItemName('');
+                    handleClose();
+                  }}
+                >
+                  Add
+                </Button>
+              </Stack>
+            </Box>
+          </>
         </Modal>
         <Button variant='contained' onClick={handleOpen}>
           Add New Item
