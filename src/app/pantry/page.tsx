@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
+// import { signIn, signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -11,16 +12,6 @@ import {
   Modal,
   TextField,
 } from '@mui/material';
-import { firestore } from '../firebase';
-import {
-  collection,
-  doc,
-  getDocs,
-  query,
-  setDoc,
-  deleteDoc,
-  getDoc,
-} from 'firebase/firestore';
 
 const style = {
   position: 'absolute',
@@ -107,11 +98,8 @@ export default function Pantry() {
       await updateInventory();
     } catch (error) {
       console.error('Error getting items description:', error);
-      // setImageDescription('Failed to get items');
     }
   };
-  // addItem('beans');
-  // addItem('corn');
 
   const removeItem = async (item: string) => {
     try {
@@ -136,33 +124,9 @@ export default function Pantry() {
     }
   };
 
-  // removeItem('beans');
-
   useEffect(() => {
     updateInventory();
   }, [updateInventory]);
-
-  // const updateInventory = async () => {
-  //   const snapshot = query(collection(firestore, 'inventory'));
-  //   const docs = await getDocs(snapshot);
-  //   const inventoryList: { name: string; data: any }[] = [];
-  //   docs.forEach((doc) => {
-  //     inventoryList.push({ name: doc.id, data: doc.data() });
-  //   });
-  //   setInventory(inventoryList);
-  // };
-
-  // const addItem = async (item: string) => {
-  //   const docRef = doc(collection(firestore, 'inventory'), item);
-  //   const docSnap = await getDoc(docRef);
-  //   if (docSnap.exists()) {
-  //     const { quantity } = docSnap.data();
-  //     await setDoc(docRef, { quantity: quantity + 1 });
-  //   } else {
-  //     await setDoc(docRef, { quantity: 1 });
-  //   }
-  //   await updateInventory();
-  // };
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -255,12 +219,7 @@ export default function Pantry() {
           </Stack>
         </Box>
       </Box>
-      {/* <Box>
-        <Typography variant='h1'>Inventory Management</Typography>
-      </Box>
-      <h1>Pantry</h1>
-      <p>Welcome {session?.data?.user?.email}</p> */}
-      <button onClick={() => signOut()}>Sign out</button>
+      {/* <button onClick={() => signOut()}>Sign out</button> */}
     </>
   );
 }
